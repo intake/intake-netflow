@@ -1,15 +1,15 @@
-import io
-
 import pytest
 
 import intake_netflow.v9 as nf
+
+from .utils import byte_stream
 
 
 @pytest.fixture
 def stream1():
     flowsets = [nf.TemplateFlowSet()]
     packet = nf.ExportPacket(flowsets)
-    return io.BufferedReader(io.BytesIO(packet.encode()))
+    return byte_stream(packet.encode())
 
 
 @pytest.fixture
@@ -17,7 +17,7 @@ def stream2():
     template = [nf.TemplateFlowSet()]
     data = [nf.DataFlowSet(256 + i) for i in range(32)]
     packet = nf.ExportPacket(template + data)
-    return io.BufferedReader(io.BytesIO(packet.encode()))
+    return byte_stream(packet.encode())
 
 
 @pytest.fixture
@@ -30,7 +30,7 @@ def stream3():
         packet = nf.ExportPacket([nf.DataFlowSet(256 + i)])
         raw += packet.encode()
 
-    return io.BufferedReader(io.BytesIO(raw))
+    return byte_stream(raw)
 
 
 def test_stream_with_only_template(stream1):

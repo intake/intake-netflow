@@ -146,10 +146,26 @@ class FlowSet(object):
         raise Exception("unknown flowset id '{}'".format(flowset_id))
 
 
+@attr.s
+class TemplateField(object):
+    type = attr.ib(type=FieldType)
+    length = attr.ib(type=int)
+
+    @staticmethod
+    def decode(source):
+        return TemplateField(*read_and_unpack(source, s_type_length))
+
+    def encode(self):
+        return s_type_length.pack(self.type, self.length)
+
+
 class TemplateRecord(object):
-    def __init__(self, id):
+    def __init__(self, id, fields=None):
         self.id = id
         self.fields = []
+
+    def __eq__(self, other):
+        return self.id == other.id and sorted(self.fields) == sorted(other.fields)
 
     @property
     def length(self):
@@ -161,26 +177,29 @@ class TemplateRecord(object):
 
         template = TemplateRecord(template_id)
         for _ in range(nfields):
-            template.fields.append(read_and_unpack(source, s_type_length))
+            template.fields.append(TemplateField.decode(source))
 
         return template
 
     def encode(self):
         raw = s_type_length.pack(self.id, len(self.fields))
         for field in self.fields:
-            raw += s_type_length.pack(*field)
+            raw += field.encode()
         return raw
 
 
 class TemplateFlowSet(object):
-    def __init__(self):
+    def __init__(self, templates=None):
         self.id = 0
-        self.templates = {}
+        self.templates = {template.id: template for template in templates} if templates else {}
+
+    def __eq__(self, other):
+        return self.id == other.id and self.templates == other.templates
 
     @property
     def length(self):
         nbytes = s_type_length.size
-        for template in self.templates:
+        for template in self.templates.values():
             nbytes += template.length
         return nbytes
 
@@ -199,7 +218,7 @@ class TemplateFlowSet(object):
 
     def encode(self):
         raw = s_type_length.pack(self.id, self.length)
-        for template in self.templates:
+        for template in self.templates.values():
             raw += template.encode()
         return raw
 
