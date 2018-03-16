@@ -1,0 +1,36 @@
+package:
+  name: intake-netflow
+  version: 0.0.1
+
+source:
+  path: ..
+
+build:
+  number: 0
+  script:
+    - python setup.py install --single-version-externally-managed --record=record.txt
+  noarch: python
+
+requirements:
+  build:
+    - python
+    - jinja2
+  run:
+    - intake
+    - python
+
+test:
+  source_files:
+    - tests
+  requires:
+    - pytest
+    - pytest-cov
+    - coverage
+  commands:
+    - py.test --verbose --cov=intake_netflow tests
+
+about:
+  home: https://github.com/ContinuumIO/intake-netflow
+  license: BSD
+  license_file: LICENSE
+  summary: Intake Netflow plugin
