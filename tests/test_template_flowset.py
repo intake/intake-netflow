@@ -1,6 +1,5 @@
+from intake_netflow.utils import byte_stream
 from intake_netflow.v9 import TemplateField, TemplateFlowSet, TemplateRecord
-
-from .utils import byte_stream
 
 
 def test_field_roundtrip():

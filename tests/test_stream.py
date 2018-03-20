@@ -1,8 +1,7 @@
 import pytest
 
+from intake_netflow.utils import byte_stream
 import intake_netflow.v9 as nf
-
-from .utils import byte_stream
 
 
 @pytest.fixture

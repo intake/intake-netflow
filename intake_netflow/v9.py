@@ -4,7 +4,7 @@ import struct
 import attr
 import enum
 
-from .utils import read_and_unpack
+from .utils import byte_stream, read_and_unpack
 
 
 s_header = struct.Struct("!HHIIII")
@@ -134,16 +134,14 @@ class Header(object):
                              self.source_id)
 
 
-class FlowSet(object):
-    @staticmethod
-    def decode(source):
-        raw = source.peek(s_flowset.size)[:s_flowset.size]
-        flowset_id = s_flowset.unpack(raw)[0]
-        if flowset_id == 0:
-            return TemplateFlowSet.decode(source)
-        if flowset_id > 255:
-            return DataFlowSet.decode(source)
-        raise Exception("unknown flowset id '{}'".format(flowset_id))
+def decode_flowset(source):
+    raw = source.peek(s_flowset.size)[:s_flowset.size]
+    flowset_id = s_flowset.unpack(raw)[0]
+    if flowset_id == 0:
+        return TemplateFlowSet.decode(source)
+    if flowset_id > 255:
+        return DataFlowSet.decode(source)
+    raise Exception("unknown flowset id '{}'".format(flowset_id))
 
 
 @attr.s
@@ -162,14 +160,16 @@ class TemplateField(object):
 class TemplateRecord(object):
     def __init__(self, id, fields=None):
         self.id = id
-        self.fields = []
+        self.fields = fields if fields else []
 
     def __eq__(self, other):
         return self.id == other.id and sorted(self.fields) == sorted(other.fields)
 
-    @property
-    def length(self):
+    def __len__(self):
         return s_type_length.size + len(self.fields) * s_type_length.size
+
+    def __iter__(self):
+        return iter(self.fields)
 
     @staticmethod
     def decode(source):
@@ -196,12 +196,14 @@ class TemplateFlowSet(object):
     def __eq__(self, other):
         return self.id == other.id and self.templates == other.templates
 
-    @property
-    def length(self):
+    def __len__(self):
         nbytes = s_type_length.size
         for template in self.templates.values():
-            nbytes += template.length
+            nbytes += len(template)
         return nbytes
+
+    def __iter__(self):
+        return iter(self.templates)
 
     @staticmethod
     def decode(source):
@@ -212,30 +214,46 @@ class TemplateFlowSet(object):
         while offset < length:
             template = TemplateRecord.decode(source)
             fs.templates[template.id] = template
-            offset += template.length
+            offset += len(template)
 
         return fs
 
     def encode(self):
-        raw = s_type_length.pack(self.id, self.length)
+        raw = s_type_length.pack(self.id, len(self))
         for template in self.templates.values():
             raw += template.encode()
         return raw
 
 
 class DataFlowSet(object):
-    def __init__(self, id, length=s_type_length.size):
+    def __init__(self, id, payload=b''):
         self.id = id
-        self.length = length
+        self.payload = payload
+        self.records = []
+        self._partial = True
+
+    def __len__(self):
+        return s_type_length.size + len(self.payload)
+
+    def __iter__(self):
+        return iter(self.records)
+
+    def apply(self, template):
+        source = byte_stream(self.payload)
+        self.records = [field.decode(source) for field in template]
+        self._partial = False
 
     @staticmethod
     def decode(source):
-        fs = DataFlowSet(*read_and_unpack(source, s_type_length))
-        source.seek(fs.length - s_type_length.size, 1)
-        return fs
+        id, length = read_and_unpack(source, s_type_length)
+        payload = source.read(length - s_type_length.size)
+        return DataFlowSet(id, payload)
 
     def encode(self):
-        return s_type_length.pack(self.id, self.length)
+        raw = s_type_length.pack(self.id, len(self))
+        if self.payload:
+            raw += self.payload
+        return raw
 
 
 class ExportPacket(object):
@@ -243,10 +261,13 @@ class ExportPacket(object):
         self.header = header if header else Header(count=len(flowsets))
         self.flowsets = flowsets
 
+    def __iter__(self):
+        return iter(self.flowsets)
+
     @staticmethod
     def decode(source):
         header = Header.decode(source)
-        flowsets = [FlowSet.decode(source) for _ in range(header.count)]
+        flowsets = [decode_flowset(source) for _ in range(header.count)]
         return ExportPacket(flowsets, header=header)
 
     def encode(self):
