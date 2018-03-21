@@ -316,11 +316,19 @@ class ExportPacket(object):
 class Stream(object):
     def __init__(self, source):
         self._source = source
+        self._cache = {}
 
     def next(self):
         if self._source.peek() == b'':
             raise StopIteration
-        return ExportPacket.decode(self._source)
+        packet = ExportPacket.decode(self._source)
+        for flowset in packet:
+            if isinstance(flowset, TemplateFlowSet):
+                self._cache[flowset.id] = flowset
+        for flowset in packet:
+            if isinstance(flowset, DataFlowSet):
+                flowset.apply(self._cache[flowset.id])
+        return packet
 
     def __next__(self):
         return self.next()
