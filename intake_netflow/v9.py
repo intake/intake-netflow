@@ -159,13 +159,13 @@ def create_struct(dtype, length):
         elif length == 8:
             code = 'Q'
         else:
-            raise TypeError("invalid integer length: {}".format(length))
+            raise ValueError("invalid integer length: {}".format(length))
     elif dtype is bytes:
-        code = "B" * length
+        code = "{}B".format(length)
     elif dtype is str:
         code = "{}s".format(length)
     else:
-        raise TypeError("invalid datatype: {}".format(dtype))
+        raise ValueError("invalid datatype: {}".format(dtype))
     return struct.Struct('!' + code)
 
 
