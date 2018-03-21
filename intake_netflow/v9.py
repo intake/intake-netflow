@@ -149,6 +149,12 @@ class TemplateField(object):
     type = attr.ib(type=FieldType)
     length = attr.ib(type=int)
 
+    @property
+    def struct(self):
+        if not hasattr(self, 'struct'):
+            self.struct = struct.Struct('!' + 'B' * self.length)
+        return self.struct
+
     @staticmethod
     def decode(source):
         return TemplateField(*read_and_unpack(source, s_type_length))
@@ -202,6 +208,9 @@ class TemplateFlowSet(object):
             nbytes += len(template)
         return nbytes
 
+    def __getitem__(self, key):
+        return self.templates[key]
+
     def __iter__(self):
         return iter(self.templates)
 
@@ -229,8 +238,6 @@ class DataFlowSet(object):
     def __init__(self, id, payload=b''):
         self.id = id
         self.payload = payload
-        self.records = []
-        self._partial = True
 
     def __len__(self):
         return s_type_length.size + len(self.payload)
@@ -239,9 +246,13 @@ class DataFlowSet(object):
         return iter(self.records)
 
     def apply(self, template):
+        self.records = []
         source = byte_stream(self.payload)
-        self.records = [field.decode(source) for field in template]
-        self._partial = False
+
+        remaining = len(self.payload)
+        while remaining > len(template):
+            self.records.append([read_and_unpack(source, field.struct) for field in template])
+            remaining -= len(template)
 
     @staticmethod
     def decode(source):
