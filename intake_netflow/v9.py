@@ -1,3 +1,23 @@
+"""Implementation for Cisco's NetFlow Version 9 flow-record format.
+
+NetFlow is an exchange protocol between a server (Exporter in Cisco parlance)
+and a client (Collector in Cisco parlance). A stream of packets is sent from
+the Exporter to the Collector. Each packet can represent several IP flows. A
+diagram of a single packet is shown below::
+
+    +--------+------------------+--------------+--------------+-----+------------------+--------------+
+    | Header | Template FlowSet | Data FlowSet | Data FlowSet | ... | Template FlowSet | Data FlowSet |
+    +--------+------------------+--------------+--------------+-----+------------------+--------------+
+
+This implementation can serialize and deserialize a packet, but the stream is a
+read-only representation of serialized packets.
+
+The full documentation of this protocol is `NetflowV9`_.
+
+.. _NetflowV9:
+   https://www.cisco.com/en/US/technologies/tk648/tk362/technologies_white_paper09186a00800a3db9.pdf
+"""
+
 from datetime import datetime
 import functools
 import struct
@@ -395,13 +415,22 @@ class ExportPacket(object):
         self.flowsets = flowsets
 
     def update_cache(self, cache):
+        """Update cache of template records."""
         for i, flowset in enumerate(self.flowsets):
             if not isinstance(flowset, TemplateFlowSet):
                 continue
             for id, record in flowset.templates.items():
-                self._cache[id] = record
+                cache[id] = record
 
     def apply(self, templates):
+        """Deserialize partially-decoded data flowsets.
+
+        Deserialization of a data flowset is a two-step process because we
+        cannot assume the needed template is available when we encounter the
+        data flowset. Thus, we place the deserialization process on hold into
+        a packet is fully read. Then we re-scan the partially-decoded data
+        flowsets and finish deserialization.
+        """
         for i, flowset in enumerate(self.flowsets):
             if isinstance(flowset, functools.partial):
                 self.flowsets[i] = flowset(templates)
@@ -423,6 +452,12 @@ class ExportPacket(object):
 
 class Stream(object):
     def __init__(self, source):
+        """A read-only representation of serialized packets.
+
+        Parameters:
+            source : io.BufferedReader
+                Read-only input for packets.
+        """
         self._source = source
         self._cache = {}
 
