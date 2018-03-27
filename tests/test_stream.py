@@ -5,28 +5,31 @@ import intake_netflow.v9 as nf
 
 
 @pytest.fixture
-def stream1():
-    flowsets = [nf.TemplateFlowSet()]
-    packet = nf.ExportPacket(flowsets)
+def stream1(ipv4_template):
+    tfs = nf.TemplateFlowSet([ipv4_template])
+    packet = nf.ExportPacket([tfs])
     return byte_stream(packet.encode())
 
 
 @pytest.fixture
-def stream2():
-    template = [nf.TemplateFlowSet()]
-    data = [nf.DataFlowSet(256 + i) for i in range(32)]
-    packet = nf.ExportPacket(template + data)
+def stream2(ipv4_template):
+    tfs = nf.TemplateFlowSet([ipv4_template])
+    data = [nf.DataFlowSet(ipv4_template.id, [], tfs.templates) for i in range(32)]
+    packet = nf.ExportPacket([tfs] + data)
     return byte_stream(packet.encode())
 
 
 @pytest.fixture
-def stream3():
+def stream3(ipv4_template):
+    tfs = nf.TemplateFlowSet([ipv4_template])
+
     # template
-    raw = nf.ExportPacket([nf.TemplateFlowSet()]).encode()
+    raw = nf.ExportPacket([tfs]).encode()
 
     # data
     for i in range(32):
-        packet = nf.ExportPacket([nf.DataFlowSet(256 + i)])
+        data = [nf.DataFlowSet(ipv4_template.id, [], tfs.templates)]
+        packet = nf.ExportPacket(data)
         raw += packet.encode()
 
     return byte_stream(raw)

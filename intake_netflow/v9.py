@@ -1,4 +1,5 @@
 from datetime import datetime
+import functools
 import struct
 
 import attr
@@ -12,104 +13,196 @@ s_flowset = struct.Struct("!H")
 s_type_length = struct.Struct("!HH")
 
 
-class FieldType(enum.Enum):
-    IN_BYTES = (1, int)
-    IN_PKTS = (2, int)
-    FLOWS = (3, int)
-    PROTOCOL = (4, int)
-    SRC_TOS = (5, int)
-    TCP_FLAGS = (6, int)
-    L4_SRC_PORT = (7, int)
-    IPV4_SRC_ADDR = (8, int)
-    SRC_MASK = (9, int)
-    INPUT_SNMP = (10, int)
-    L4_DST_PORT = (11, int)
-    IPV4_DST_ADDR = (12, int)
-    DST_MASK = (13, int)
-    OUTPUT_SNMP = (14, int)
-    IPV4_NEXT_HOP = (15, int)
-    SRC_AS = (16, int)
-    DST_AS = (17, int)
-    BGP_IPV4_NEXT_HOP = (18, int)
-    MUL_DST_PKTS = (19, int)
-    MUL_DST_BYTES = (20, int)
-    LAST_SWITCHED = (21, int)
-    FIRST_SWITCHED = (22, int)
-    OUT_BYTES = (23, int)
-    OUT_PKTS = (24, int)
-    MIN_PKT_LNGTH = (25, int)
-    MAX_PKT_LNGTH = (26, int)
-    IPV6_SRC_ADDR = (27, bytes)
-    IPV6_DST_ADDR = (28, bytes)
-    IPV6_SRC_MASK = (29, int)
-    IPV6_DST_MASK = (30, int)
-    IPV6_FLOW_LABEL = (31, bytes)
-    ICMP_TYPE = (32, int)
-    MUL_IGMP_TYPE = (33, int)
-    SAMPLING_INTERVAL = (34, int)
-    SAMPLING_ALGORITHM = (35, int)
-    FLOW_ACTIVE_TIMEOUT = (36, int)
-    FLOW_INACTIVE_TIMEOUT = (37, int)
-    ENGINE_TYPE = (38, int)
-    ENGINE_ID = (39, int)
-    TOTAL_BYTES_EXP = (40, int)
-    TOTAL_PKTS_EXP = (41, int)
-    TOTAL_FLOWS_EXP = (42, int)
-    IPV4_SRC_PREFIX = (44, int)
-    IPV4_DST_PREFIX = (45, int)
-    MPLS_TOP_LABEL_TYPE = (46, int)
-    MPLS_TOP_LABEL_IP_ADDR = (47, int)
-    FLOW_SAMPLER_ID = (48, int)
-    FLOW_SAMPLER_MODE = (49, int)
-    FLOW_SAMPLER_RANDOM_INTERVAL = (50, int)
-    MIN_TTL = (52, int)
-    MAX_TTL = (53, int)
-    IPV4_IDENT = (54, int)
-    DST_TOS = (55, int)
-    IN_SRC_MAC = (56, bytes)
-    OUT_DST_MAC = (57, bytes)
-    SRC_VLAN = (58, int)
-    DST_VLAN = (59, int)
-    IP_PROTOCOL_VERSION = (60, int)
-    DIRECTION = (61, int)
-    IPV6_NEXT_HOP = (62, bytes)
-    BPG_IPV6_NEXT_HOP = (63, bytes)
-    IPV6_OPTION_HEADERS = (64, int)
-    MPLS_LABEL_1 = (70, bytes)
-    MPLS_LABEL_2 = (71, bytes)
-    MPLS_LABEL_3 = (72, bytes)
-    MPLS_LABEL_4 = (73, bytes)
-    MPLS_LABEL_5 = (74, bytes)
-    MPLS_LABEL_6 = (75, bytes)
-    MPLS_LABEL_7 = (76, bytes)
-    MPLS_LABEL_8 = (77, bytes)
-    MPLS_LABEL_9 = (78, bytes)
-    MPLS_LABEL_10 = (79, bytes)
-    IN_DST_MAC = (80, bytes)
-    OUT_SRC_MAC = (81, bytes)
-    IF_NAME = (82, str)
-    IF_DESC = (83, str)
-    SAMPLER_NAME = (84, str)
-    IN_PERMANENT_BYTES = (85, int)
-    IN_PERMANENT_PKTS = (86, int)
-    FRAGMENT_OFFSET = (88, int)
-    FORWARDING_STATUS = (89, int)
-    MPLS_PAL_RD = (90, bytes)
-    MPLS_PREFIX_LEN = (91, int)
-    SRC_TRAFFIC_INDEX = (92, int)
-    DST_TRAFFIC_INDEX = (93, int)
-    APPLICATION_DESCRIPTION = (94, str)
-    APPLICATION_TAG = (95, bytes)
-    APPLICATION_NAME = (96, str)
-    POST_IP_DIFF_SERV_CODE_POINT = (98, int)
-    REPLICATION_FACTOR = (99, int)
-    LAYER2_PACKET_SECTION_OFFSET = (102, int)
-    LAYER2_PACKET_SECTION_SIZE = (103, int)
-    LAYER2_PACKET_SECTION_DATA = (104, bytes)
+class Field(enum.Enum):
+    IN_BYTES = 1
+    IN_PKTS = 2
+    FLOWS = 3
+    PROTOCOL = 4
+    SRC_TOS = 5
+    TCP_FLAGS = 6
+    L4_SRC_PORT = 7
+    IPV4_SRC_ADDR = 8
+    SRC_MASK = 9
+    INPUT_SNMP = 10
+    L4_DST_PORT = 11
+    IPV4_DST_ADDR = 12
+    DST_MASK = 13
+    OUTPUT_SNMP = 14
+    IPV4_NEXT_HOP = 15
+    SRC_AS = 16
+    DST_AS = 17
+    BGP_IPV4_NEXT_HOP = 18
+    MUL_DST_PKTS = 19
+    MUL_DST_BYTES = 20
+    LAST_SWITCHED = 21
+    FIRST_SWITCHED = 22
+    OUT_BYTES = 23
+    OUT_PKTS = 24
+    MIN_PKT_LNGTH = 25
+    MAX_PKT_LNGTH = 26
+    IPV6_SRC_ADDR = 27
+    IPV6_DST_ADDR = 28
+    IPV6_SRC_MASK = 29
+    IPV6_DST_MASK = 30
+    IPV6_FLOW_LABEL = 31
+    ICMP_TYPE = 32
+    MUL_IGMP_TYPE = 33
+    SAMPLING_INTERVAL = 34
+    SAMPLING_ALGORITHM = 35
+    FLOW_ACTIVE_TIMEOUT = 36
+    FLOW_INACTIVE_TIMEOUT = 37
+    ENGINE_TYPE = 38
+    ENGINE_ID = 39
+    TOTAL_BYTES_EXP = 40
+    TOTAL_PKTS_EXP = 41
+    TOTAL_FLOWS_EXP = 42
+    IPV4_SRC_PREFIX = 44
+    IPV4_DST_PREFIX = 45
+    MPLS_TOP_LABEL_TYPE = 46
+    MPLS_TOP_LABEL_IP_ADDR = 47
+    FLOW_SAMPLER_ID = 48
+    FLOW_SAMPLER_MODE = 49
+    FLOW_SAMPLER_RANDOM_INTERVAL = 50
+    MIN_TTL = 52
+    MAX_TTL = 53
+    IPV4_IDENT = 54
+    DST_TOS = 55
+    IN_SRC_MAC = 56
+    OUT_DST_MAC = 57
+    SRC_VLAN = 58
+    DST_VLAN = 59
+    IP_PROTOCOL_VERSION = 60
+    DIRECTION = 61
+    IPV6_NEXT_HOP = 62
+    BPG_IPV6_NEXT_HOP = 63
+    IPV6_OPTION_HEADERS = 64
+    MPLS_LABEL_1 = 70
+    MPLS_LABEL_2 = 71
+    MPLS_LABEL_3 = 72
+    MPLS_LABEL_4 = 73
+    MPLS_LABEL_5 = 74
+    MPLS_LABEL_6 = 75
+    MPLS_LABEL_7 = 76
+    MPLS_LABEL_8 = 77
+    MPLS_LABEL_9 = 78
+    MPLS_LABEL_10 = 79
+    IN_DST_MAC = 80
+    OUT_SRC_MAC = 81
+    IF_NAME = 82
+    IF_DESC = 83
+    SAMPLER_NAME = 84
+    IN_PERMANENT_BYTES = 85
+    IN_PERMANENT_PKTS = 86
+    FRAGMENT_OFFSET = 88
+    FORWARDING_STATUS = 89
+    MPLS_PAL_RD = 90
+    MPLS_PREFIX_LEN = 91
+    SRC_TRAFFIC_INDEX = 92
+    DST_TRAFFIC_INDEX = 93
+    APPLICATION_DESCRIPTION = 94
+    APPLICATION_TAG = 95
+    APPLICATION_NAME = 96
+    POST_IP_DIFF_SERV_CODE_POINT = 98
+    REPLICATION_FACTOR = 99
+    LAYER2_PACKET_SECTION_OFFSET = 102
+    LAYER2_PACKET_SECTION_SIZE = 103
+    LAYER2_PACKET_SECTION_DATA = 104
 
-    def __init__(self, id, dtype):
-        self.id = id
-        self.dtype = dtype
+
+class FieldDataType(enum.Enum):
+    IN_BYTES = int
+    IN_PKTS = int
+    FLOWS = int
+    PROTOCOL = int
+    SRC_TOS = int
+    TCP_FLAGS = int
+    L4_SRC_PORT = int
+    IPV4_SRC_ADDR = int
+    SRC_MASK = int
+    INPUT_SNMP = int
+    L4_DST_PORT = int
+    IPV4_DST_ADDR = int
+    DST_MASK = int
+    OUTPUT_SNMP = int
+    IPV4_NEXT_HOP = int
+    SRC_AS = int
+    DST_AS = int
+    BGP_IPV4_NEXT_HOP = int
+    MUL_DST_PKTS = int
+    MUL_DST_BYTES = int
+    LAST_SWITCHED = int
+    FIRST_SWITCHED = int
+    OUT_BYTES = int
+    OUT_PKTS = int
+    MIN_PKT_LNGTH = int
+    MAX_PKT_LNGTH = int
+    IPV6_SRC_ADDR = bytes
+    IPV6_DST_ADDR = bytes
+    IPV6_SRC_MASK = int
+    IPV6_DST_MASK = int
+    IPV6_FLOW_LABEL = bytes
+    ICMP_TYPE = int
+    MUL_IGMP_TYPE = int
+    SAMPLING_INTERVAL = int
+    SAMPLING_ALGORITHM = int
+    FLOW_ACTIVE_TIMEOUT = int
+    FLOW_INACTIVE_TIMEOUT = int
+    ENGINE_TYPE = int
+    ENGINE_ID = int
+    TOTAL_BYTES_EXP = int
+    TOTAL_PKTS_EXP = int
+    TOTAL_FLOWS_EXP = int
+    IPV4_SRC_PREFIX = int
+    IPV4_DST_PREFIX = int
+    MPLS_TOP_LABEL_TYPE = int
+    MPLS_TOP_LABEL_IP_ADDR = int
+    FLOW_SAMPLER_ID = int
+    FLOW_SAMPLER_MODE = int
+    FLOW_SAMPLER_RANDOM_INTERVAL = int
+    MIN_TTL = int
+    MAX_TTL = int
+    IPV4_IDENT = int
+    DST_TOS = int
+    IN_SRC_MAC = bytes
+    OUT_DST_MAC = bytes
+    SRC_VLAN = int
+    DST_VLAN = int
+    IP_PROTOCOL_VERSION = int
+    DIRECTION = int
+    IPV6_NEXT_HOP = bytes
+    BPG_IPV6_NEXT_HOP = bytes
+    IPV6_OPTION_HEADERS = int
+    MPLS_LABEL_1 = bytes
+    MPLS_LABEL_2 = bytes
+    MPLS_LABEL_3 = bytes
+    MPLS_LABEL_4 = bytes
+    MPLS_LABEL_5 = bytes
+    MPLS_LABEL_6 = bytes
+    MPLS_LABEL_7 = bytes
+    MPLS_LABEL_8 = bytes
+    MPLS_LABEL_9 = bytes
+    MPLS_LABEL_10 = bytes
+    IN_DST_MAC = bytes
+    OUT_SRC_MAC = bytes
+    IF_NAME = str
+    IF_DESC = str
+    SAMPLER_NAME = str
+    IN_PERMANENT_BYTES = int
+    IN_PERMANENT_PKTS = int
+    FRAGMENT_OFFSET = int
+    FORWARDING_STATUS = int
+    MPLS_PAL_RD = bytes
+    MPLS_PREFIX_LEN = int
+    SRC_TRAFFIC_INDEX = int
+    DST_TRAFFIC_INDEX = int
+    APPLICATION_DESCRIPTION = str
+    APPLICATION_TAG = bytes
+    APPLICATION_NAME = str
+    POST_IP_DIFF_SERV_CODE_POINT = int
+    REPLICATION_FACTOR = int
+    LAYER2_PACKET_SECTION_OFFSET = int
+    LAYER2_PACKET_SECTION_SIZE = int
+    LAYER2_PACKET_SECTION_DATA = bytes
 
 
 @attr.s
@@ -138,16 +231,6 @@ class Header(object):
                              self.source_id)
 
 
-def decode_flowset(source):
-    raw = source.peek(s_flowset.size)[:s_flowset.size]
-    flowset_id = s_flowset.unpack(raw)[0]
-    if flowset_id == 0:
-        return TemplateFlowSet.decode(source)
-    if flowset_id > 255:
-        return DataFlowSet.decode(source)
-    raise Exception("unknown flowset id '{}'".format(flowset_id))
-
-
 def create_struct(dtype, length):
     if dtype is int:
         if length == 1:
@@ -171,21 +254,23 @@ def create_struct(dtype, length):
 
 @attr.s
 class TemplateField(object):
-    type = attr.ib(type=FieldType)
+    type = attr.ib(type=Field)
     length = attr.ib(type=int)
 
     @property
     def struct(self):
-        if not hasattr(self, 'struct'):
-            self.struct = create_struct(self.type.dtype, self.length)
-        return self.struct
+        if not hasattr(self, '_struct'):
+            dtype = FieldDataType[Field(self.type.value).name].value
+            self._struct = create_struct(dtype, self.length)
+        return self._struct
 
     @staticmethod
     def decode(source):
-        return TemplateField(*read_and_unpack(source, s_type_length))
+        type, length = read_and_unpack(source, s_type_length)
+        return TemplateField(Field(type), length)
 
     def encode(self):
-        return s_type_length.pack(self.type, self.length)
+        return s_type_length.pack(self.type.value, self.length)
 
 
 class TemplateRecord(object):
@@ -197,7 +282,7 @@ class TemplateRecord(object):
         return self.id == other.id and sorted(self.fields) == sorted(other.fields)
 
     def __len__(self):
-        return s_type_length.size + len(self.fields) * s_type_length.size
+        return s_type_length.size + sum(field.length for field in self.fields)
 
     def __iter__(self):
         return iter(self.fields)
@@ -260,36 +345,48 @@ class TemplateFlowSet(object):
 
 
 class DataFlowSet(object):
-    def __init__(self, id, payload=b''):
-        self.id = id
-        self.payload = payload
+    def __init__(self, id, payload, templates):
+        self.template = templates[id]
+        self.records = []
+        self.record_length = len(self.template) - s_type_length.size
+
+        if isinstance(payload, bytes):
+            source = byte_stream(payload)
+            remaining = len(payload)
+            while remaining >= self.record_length:
+                self.records.append([read_and_unpack(source, field.struct)[0] for field in self.template])
+                remaining -= self.record_length
+        elif isinstance(payload, list):
+            self.records = payload
 
     def __len__(self):
-        return s_type_length.size + len(self.payload)
+        return s_type_length.size + len(self.records) * self.record_length
 
     def __iter__(self):
         return iter(self.records)
-
-    def apply(self, template):
-        self.records = []
-        source = byte_stream(self.payload)
-
-        remaining = len(self.payload)
-        while remaining > len(template):
-            self.records.append([read_and_unpack(source, field.struct) for field in template])
-            remaining -= len(template)
 
     @staticmethod
     def decode(source):
         id, length = read_and_unpack(source, s_type_length)
         payload = source.read(length - s_type_length.size)
-        return DataFlowSet(id, payload)
+        return functools.partial(DataFlowSet, id, payload)
 
     def encode(self):
-        raw = s_type_length.pack(self.id, len(self))
-        if self.payload:
-            raw += self.payload
+        raw = s_type_length.pack(self.template.id, len(self))
+        for record in self.records:
+            for field, value in zip(self.template.fields, record):
+                raw += field.struct.pack(value)
         return raw
+
+
+def decode_flowset(source):
+    raw = source.peek(s_flowset.size)[:s_flowset.size]
+    flowset_id = s_flowset.unpack(raw)[0]
+    if flowset_id == 0:
+        return TemplateFlowSet.decode(source)
+    if flowset_id > 255:
+        return DataFlowSet.decode(source)
+    raise Exception("unknown flowset id '{}'".format(flowset_id))
 
 
 class ExportPacket(object):
@@ -297,8 +394,17 @@ class ExportPacket(object):
         self.header = header if header else Header(count=len(flowsets))
         self.flowsets = flowsets
 
-    def __iter__(self):
-        return iter(self.flowsets)
+    def update_cache(self, cache):
+        for i, flowset in enumerate(self.flowsets):
+            if not isinstance(flowset, TemplateFlowSet):
+                continue
+            for id, record in flowset.templates.items():
+                self._cache[id] = record
+
+    def apply(self, templates):
+        for i, flowset in enumerate(self.flowsets):
+            if isinstance(flowset, functools.partial):
+                self.flowsets[i] = flowset(templates)
 
     @staticmethod
     def decode(source):
@@ -309,6 +415,8 @@ class ExportPacket(object):
     def encode(self):
         raw = self.header.encode()
         for flowset in self.flowsets:
+            if isinstance(flowset, functools.partial):
+                continue
             raw += flowset.encode()
         return raw
 
@@ -322,12 +430,8 @@ class Stream(object):
         if self._source.peek() == b'':
             raise StopIteration
         packet = ExportPacket.decode(self._source)
-        for flowset in packet:
-            if isinstance(flowset, TemplateFlowSet):
-                self._cache[flowset.id] = flowset
-        for flowset in packet:
-            if isinstance(flowset, DataFlowSet):
-                flowset.apply(self._cache[flowset.id])
+        packet.update_cache(self._cache)
+        packet.apply(self._cache)
         return packet
 
     def __next__(self):
