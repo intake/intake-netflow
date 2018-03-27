@@ -16,6 +16,7 @@ requirements:
     - python
     - jinja2
   run:
+    - attrs
     - intake
     - python
 
