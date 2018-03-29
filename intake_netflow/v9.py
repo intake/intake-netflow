@@ -464,10 +464,36 @@ class Stream(object):
     def next(self):
         if self._source.peek() == b'':
             raise StopIteration
+
+        # Packet deserialization is a two-step process.
+        #
+        # A data flowset requires a defined template to complete the
+        # deserialization process, Since template and data flowsets can be
+        # out-of-order within a packet, then we must temporarily wait to
+        # finish deserializing a data flowset and the respective records.
+
         packet = ExportPacket.decode(self._source)
+
+        # Add templates to cache
         packet.update_cache(self._cache)
+
+        # Finish deserialization
         packet.apply(self._cache)
+
         return packet
+
+    @staticmethod
+    def to_records(packet):
+        """Return data records in a packet."""
+        records = []
+        for flowset in packet.flowsets:
+            if not isinstance(flowset, DataFlowSet):
+                continue
+            keys = [field.type.name.lower() for field in flowset.template.fields]
+            for record in flowset.records:
+                records.append(dict(zip(keys, record)))
+
+        return records
 
     def __next__(self):
         return self.next()
