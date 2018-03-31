@@ -2,7 +2,7 @@ from glob import glob
 
 from intake.source import base
 
-from .v9 import PacketStream
+from .v9 import RecordStream
 
 
 class Plugin(base.Plugin):
@@ -15,7 +15,7 @@ class Plugin(base.Plugin):
             urlpath : str
                 Absolute or relative path to source files that can contain shell-style wildcards.
             kwargs : dict
-                Additional parameters to pass to ``intake_netflow.v9.PacketStream``.
+                Additional parameters to pass to ``intake_netflow.v9.RecordStream``.
         """
         base_kwargs, source_kwargs = self.separate_base_kwargs(kwargs)
         return NetflowSource(urlpath=urlpath, netflow_kwargs=source_kwargs, metadata=base_kwargs['metadata'])
@@ -33,7 +33,7 @@ class NetflowSource(base.DataSource):
         super(NetflowSource, self).__init__(container='python', metadata=metadata)
 
     def _create_stream(self, src):
-        return PacketStream(open(src, "rb"))
+        return RecordStream(open(src, "rb"))
 
     def _get_schema(self):
         if self._streams is None:
