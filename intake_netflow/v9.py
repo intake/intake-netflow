@@ -450,7 +450,7 @@ class ExportPacket(object):
         return raw
 
 
-class Stream(object):
+class PacketStream(object):
     def __init__(self, source):
         """A read-only representation of serialized packets.
 
@@ -482,19 +482,6 @@ class Stream(object):
 
         return packet
 
-    @staticmethod
-    def to_records(packet):
-        """Return data records in a packet."""
-        records = []
-        for flowset in packet.flowsets:
-            if not isinstance(flowset, DataFlowSet):
-                continue
-            keys = [field.type.name.lower() for field in flowset.template.fields]
-            for record in flowset.records:
-                records.append(dict(zip(keys, record)))
-
-        return records
-
     def __next__(self):
         return self.next()
 
@@ -503,3 +490,32 @@ class Stream(object):
 
     def close(self):
         return self._source.close()
+
+
+class RecordStream(PacketStream):
+    def __init__(self, source):
+        """A read-only representation of serialized data records.
+
+        Parameters:
+            source : io.BufferedReader
+                Read-only input for data records.
+        """
+        super(RecordStream, self).__init__(source)
+        self._queue = []
+
+    def next(self):
+        while len(self._queue) == 0:
+            packet = super(RecordStream, self).next()
+            for flowset in packet.flowsets:
+                if not isinstance(flowset, DataFlowSet):
+                    continue
+                keys = [field.type.name.lower() for field in flowset.template.fields]
+                for record in flowset.records:
+                    self._queue.append(dict(zip(keys, record)))
+
+        record, self._queue = self._queue[0], self._queue[1:]
+        return record
+
+    def close(self):
+        self._queue = []
+        return super(RecordStream, self).close()

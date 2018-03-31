@@ -36,7 +36,7 @@ def stream3(ipv4_template):
 
 
 def test_stream_with_only_template(stream1):
-    s = nf.Stream(stream1)
+    s = nf.PacketStream(stream1)
     packet = s.next()
 
     assert packet.header.version == 9
@@ -45,7 +45,7 @@ def test_stream_with_only_template(stream1):
 
 
 def test_stream_with_template_and_data(stream2):
-    s = nf.Stream(stream2)
+    s = nf.PacketStream(stream2)
     packet = s.next()
 
     assert packet.header.version == 9
@@ -54,7 +54,7 @@ def test_stream_with_template_and_data(stream2):
 
 
 def test_stream_multiple_packets(stream3):
-    s = nf.Stream(stream3)
+    s = nf.PacketStream(stream3)
     packets = list(s)
 
     assert len(packets) == 33
