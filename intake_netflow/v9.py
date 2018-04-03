@@ -513,8 +513,7 @@ class RecordStream(PacketStream):
                 for record in flowset.records:
                     self._queue.append(dict(zip(keys, record)))
 
-        record, self._queue = self._queue[0], self._queue[1:]
-        return record
+        return self._queue.pop(0)
 
     def close(self):
         self._queue = []
