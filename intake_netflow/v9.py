@@ -416,7 +416,7 @@ class ExportPacket(object):
 
     def update_cache(self, cache):
         """Update cache of template records."""
-        for i, flowset in enumerate(self.flowsets):
+        for flowset in self.flowsets:
             if not isinstance(flowset, TemplateFlowSet):
                 continue
             for id, record in flowset.templates.items():
