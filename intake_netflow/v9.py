@@ -18,9 +18,9 @@ The full documentation of this protocol is `NetflowV9`_.
    https://www.cisco.com/en/US/technologies/tk648/tk362/technologies_white_paper09186a00800a3db9.pdf
 """
 
-from datetime import datetime
 import functools
 import struct
+import time
 
 import attr
 import enum
@@ -236,7 +236,7 @@ class Header(object):
 
     @datetime.default
     def current_unix_seconds(self):
-        return int(datetime.utcnow().strftime("%s"))
+        return int(time.time())
 
     @staticmethod
     def decode(source):
