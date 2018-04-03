@@ -1,4 +1,4 @@
-from glob import glob
+from dask.bytes import open_files
 
 from intake.source import base
 
@@ -13,7 +13,7 @@ class Plugin(base.Plugin):
         """
         Parameters:
             urlpath : str
-                Absolute or relative path to source files that can contain shell-style wildcards.
+                Location of the data files; can include protocol and glob characters.
             kwargs : dict
                 Additional parameters to pass to ``intake_netflow.v9.RecordStream``.
         """
@@ -27,19 +27,11 @@ class NetflowSource(base.DataSource):
 
         self._urlpath = urlpath
         self._netflow_kwargs = netflow_kwargs
-        self._streams = None
-        self._stream_sources = None
+        self._streams = [RecordStream(f) for f in open_files(urlpath, mode='rb')]
 
         super(NetflowSource, self).__init__(container='python', metadata=metadata)
 
-    def _create_stream(self, src):
-        return RecordStream(open(src, "rb"))
-
     def _get_schema(self):
-        if self._streams is None:
-            self._stream_sources = sorted(glob(self._urlpath))
-            self._streams = [self._create_stream(src) for src in self._stream_sources]
-
         return base.Schema(datashape=None,
                            dtype=None,
                            shape=None,
@@ -47,11 +39,11 @@ class NetflowSource(base.DataSource):
                            extra_metadata={})
 
     def _get_partition(self, i):
-        return self._streams[i]
+        with self._streams[i] as f:
+            return list(f)
 
     def _close(self):
         for stream in self._streams:
             stream.close()
 
         self._streams = None
-        self._stream_sources = None
