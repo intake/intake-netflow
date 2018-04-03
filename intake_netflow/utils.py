@@ -3,7 +3,7 @@ import io
 
 def read_and_unpack(source, obj):
     """Read and deserialize structure from stream.
-    
+
     Parameters:
         source : io.BufferedReader
             Read-only input stream.
