@@ -47,8 +47,6 @@ class NetflowSource(base.DataSource):
                            extra_metadata={})
 
     def _get_partition(self, i):
-        self._streams[i] = self._create_stream(self._stream_sources[i])
-
         return self._streams[i]
 
     def _close(self):
