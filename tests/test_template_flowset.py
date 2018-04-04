@@ -1,9 +1,9 @@
 from intake_netflow.utils import byte_stream
-from intake_netflow.v9 import Field, TemplateField, TemplateFlowSet, TemplateRecord
+from intake_netflow.v9 import FieldType, TemplateField, TemplateFlowSet, TemplateRecord
 
 
 def test_field_roundtrip():
-    expected = TemplateField(Field.PROTOCOL, 4)
+    expected = TemplateField(FieldType.PROTOCOL, 4)
 
     given = TemplateField.decode(byte_stream(expected.encode()))
 
@@ -19,7 +19,7 @@ def test_record_empty_roundtrip():
 
 
 def test_record_nonempty_roundtrip():
-    tf = TemplateField(Field.PROTOCOL, 4)
+    tf = TemplateField(FieldType.PROTOCOL, 4)
 
     expected = TemplateRecord(id=256, fields=[tf])
 
@@ -37,7 +37,7 @@ def test_flowset_empty_roundtrip():
 
 
 def test_flowset_nonempty_roundtrip():
-    tf = TemplateField(Field.PROTOCOL, 4)
+    tf = TemplateField(FieldType.PROTOCOL, 4)
     templates = [TemplateRecord(id=256, fields=[tf])]
     expected = TemplateFlowSet(templates)
 
