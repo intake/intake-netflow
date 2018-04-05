@@ -343,7 +343,7 @@ class ExportPacket(object):
 
         Deserialization of a data flowset is a two-step process because we
         cannot assume the needed template is available when we encounter the
-        data flowset. Thus, we place the deserialization process on hold into
+        data flowset. Thus, we place the deserialization process on hold until
         a packet is fully read. Then we re-scan the partially-decoded data
         flowsets and finish deserialization.
         """
