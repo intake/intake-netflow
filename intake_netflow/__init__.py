@@ -27,7 +27,7 @@ class NetflowSource(base.DataSource):
 
         self._urlpath = urlpath
         self._netflow_kwargs = netflow_kwargs
-        self._streams = [RecordStream(f) for f in open_files(urlpath, mode='rb')]
+        self._streams = open_files(urlpath, mode='rb')
 
         super(NetflowSource, self).__init__(container='python', metadata=metadata)
 
@@ -40,7 +40,7 @@ class NetflowSource(base.DataSource):
 
     def _get_partition(self, i):
         with self._streams[i] as f:
-            return list(f)
+            return list(RecordStream(f))
 
     def _close(self):
         for stream in self._streams:
