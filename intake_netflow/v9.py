@@ -308,8 +308,15 @@ class DataFlowSet(object):
         return raw
 
 
+def peek(source, n=1):
+    loc = source.tell()
+    raw = source.read(n)
+    source.seek(loc)
+    return raw[:n]
+
+
 def decode_flowset(source):
-    raw = source.peek(s_flowset.size)[:s_flowset.size]
+    raw = peek(source, s_flowset.size)
     flowset_id = s_flowset.unpack(raw)[0]
     if flowset_id == 0:
         return TemplateFlowSet.decode(source)
@@ -371,7 +378,7 @@ class PacketStream(object):
         self._cache = {}
 
     def next(self):
-        if self._source.peek() == b'':
+        if peek(self._source) == b'':
             raise StopIteration
 
         # Packet deserialization is a two-step process.
