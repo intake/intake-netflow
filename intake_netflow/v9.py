@@ -312,7 +312,7 @@ def peek(source, n=1):
     loc = source.tell()
     raw = source.read(n)
     source.seek(loc)
-    return raw[:n]
+    return raw
 
 
 def decode_flowset(source):
