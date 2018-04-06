@@ -6,6 +6,8 @@ from .v9 import RecordStream
 
 
 class Plugin(base.Plugin):
+    """Cisco Netflow packets to sequence of Python dicts reader"""
+
     def __init__(self):
         super(Plugin, self).__init__(name='netflow', version='0.1', container='python', partition_access=False)
 
@@ -21,6 +23,12 @@ class Plugin(base.Plugin):
 
 class NetflowSource(base.DataSource):
     def __init__(self, urlpath, metadata=None):
+        """Source to load Cisco Netflow packets as sequence of Python dicts.
+
+        Parameters:
+            urlpath : str
+                Location of the data files; can include protocol and glob characters.
+        """
         self._urlpath = urlpath
         self._streams = open_files(urlpath, mode='rb')
 
