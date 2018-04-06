@@ -19,13 +19,14 @@ The full documentation of this protocol is `NetflowV9`_.
 """
 
 import functools
+import io
 import struct
 import time
 
 import attr
 import enum
 
-from .utils import byte_stream, read_and_unpack
+from .utils import read_and_unpack
 
 
 s_header = struct.Struct("!HHIIII")
@@ -335,7 +336,7 @@ class DataFlowSet(object):
         self.record_length = len(self.template) - s_type_length.size
 
         if isinstance(payload, bytes):
-            source = byte_stream(payload)
+            source = io.BytesIO(payload)
             remaining = len(payload)
             while remaining >= self.record_length:
                 self.records.append([read_and_unpack(source, field.struct)[0] for field in self.template])
@@ -439,7 +440,7 @@ class PacketStream(object):
     """A read-only representation of serialized packets.
 
     Parameters:
-        source : io.BufferedReader
+        source : file-like object
             Read-only input for packets.
     """
 
@@ -475,7 +476,7 @@ class RecordStream(PacketStream):
     """A read-only representation of serialized data records.
 
     Parameters:
-        source : io.BufferedReader
+        source : file-like object
             Read-only input for data records.
     """
 

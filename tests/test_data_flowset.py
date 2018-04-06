@@ -1,6 +1,7 @@
+import io
+
 import pytest
 
-from intake_netflow.utils import byte_stream
 import intake_netflow.v9 as nf
 
 
@@ -16,7 +17,7 @@ def test_flowset_nonempty_roundtrip(ipv4_template, ipv4_flows):
     expected = nf.DataFlowSet(ipv4_template.id, ipv4_flows, tfs.templates)
 
     templates = {ipv4_template.id: ipv4_template}
-    given = nf.DataFlowSet.decode(byte_stream(expected.encode()))
+    given = nf.DataFlowSet.decode(io.BytesIO(expected.encode()))
     given = given(templates)
 
     assert expected.records == given.records

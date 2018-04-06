@@ -1,6 +1,7 @@
+import io
+
 import pytest
 
-from intake_netflow.utils import byte_stream
 import intake_netflow.v9 as nf
 
 
@@ -8,7 +9,7 @@ import intake_netflow.v9 as nf
 def stream1(ipv4_template):
     tfs = nf.TemplateFlowSet([ipv4_template])
     packet = nf.ExportPacket([tfs])
-    return byte_stream(packet.encode())
+    return io.BytesIO(packet.encode())
 
 
 @pytest.fixture
@@ -16,7 +17,7 @@ def stream2(ipv4_template):
     tfs = nf.TemplateFlowSet([ipv4_template])
     data = [nf.DataFlowSet(ipv4_template.id, [], tfs.templates) for i in range(32)]
     packet = nf.ExportPacket([tfs] + data)
-    return byte_stream(packet.encode())
+    return io.BytesIO(packet.encode())
 
 
 @pytest.fixture
@@ -32,7 +33,7 @@ def stream3(ipv4_template):
         packet = nf.ExportPacket(data)
         raw += packet.encode()
 
-    return byte_stream(raw)
+    return io.BytesIO(raw)
 
 
 def test_stream_with_only_template(stream1):
