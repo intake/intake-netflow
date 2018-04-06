@@ -14,11 +14,9 @@ class Plugin(base.Plugin):
         Parameters:
             urlpath : str
                 Location of the data files; can include protocol and glob characters.
-            kwargs : dict
-                Additional parameters to pass to ``intake_netflow.v9.RecordStream``.
         """
         base_kwargs, source_kwargs = self.separate_base_kwargs(kwargs)
-        return NetflowSource(urlpath=urlpath, netflow_kwargs=source_kwargs, metadata=base_kwargs['metadata'])
+        return NetflowSource(urlpath=urlpath, metadata=base_kwargs['metadata'])
 
 
 class NetflowSource(base.DataSource):
