@@ -9,7 +9,7 @@ multiple = os.path.join(basedir, '*.netflow')
 
 
 def test_single():
-    src = NetflowSource(urlpath=single, netflow_kwargs={}, metadata={})
+    src = NetflowSource(urlpath=single)
 
     metadata = src.discover()
     assert metadata['npartitions'] == 1
@@ -21,7 +21,7 @@ def test_single():
 
 
 def test_multiple():
-    src = NetflowSource(urlpath=multiple, netflow_kwargs={}, metadata={})
+    src = NetflowSource(urlpath=multiple)
 
     metadata = src.discover()
     assert metadata['npartitions'] == 2

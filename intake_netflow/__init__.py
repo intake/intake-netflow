@@ -22,11 +22,8 @@ class Plugin(base.Plugin):
 
 
 class NetflowSource(base.DataSource):
-    def __init__(self, urlpath, netflow_kwargs, metadata):
-        self._init_args = dict(netflow_kwargs=netflow_kwargs, metadata=metadata)
-
+    def __init__(self, urlpath, metadata=None):
         self._urlpath = urlpath
-        self._netflow_kwargs = netflow_kwargs
         self._streams = open_files(urlpath, mode='rb')
 
         super(NetflowSource, self).__init__(container='python', metadata=metadata)
