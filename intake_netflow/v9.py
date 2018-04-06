@@ -377,7 +377,7 @@ def decode_flowset(source):
         return TemplateFlowSet.decode(source)
     if flowset_id > 255:
         return DataFlowSet.decode(source)
-    raise Exception("unknown flowset id '{}'".format(flowset_id))
+    return None
 
 
 class ExportPacket(object):
@@ -419,7 +419,11 @@ class ExportPacket(object):
     @staticmethod
     def decode(source):
         header = Header.decode(source)
-        flowsets = [decode_flowset(source) for _ in range(header.count)]
+        flowsets = []
+        for _ in range(header.count):
+            flowset = decode_flowset(source)
+            if flowset:
+                flowsets.append(flowset)
         return ExportPacket(flowsets, header=header)
 
     def encode(self):
