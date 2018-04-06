@@ -444,7 +444,9 @@ class PacketStream(object):
         self._cache = {}
 
     def next(self):
-        if peek(self._source) == b'':
+        try:
+            packet = ExportPacket.decode(self._source)
+        except:
             raise StopIteration
 
         # Add templates to cache
