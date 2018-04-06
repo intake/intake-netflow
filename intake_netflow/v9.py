@@ -137,6 +137,23 @@ class FieldType(enum.Enum):
 
 @attr.s
 class Header(object):
+    """Packet metadata.
+
+    Parameters:
+        version : int, optional
+            The version of NetFlow records exported in a packet (defaults to 9).
+        count : int, optional
+            Number of FlowSet records contained within a packet.
+        uptime : int, optional
+            Time in milliseconds since an export device was first booted.
+        datetime : int, optional
+            Seconds since 0000 Coordinated Universal Time (UTC) 1970.
+        sequence : int, optional
+            Incremental sequence counter of all packets sent by an export device.
+        source_id : int, optional
+            Vendor-specific uniqueness ID.
+    """
+
     version = attr.ib(type=int, default=9)
     count = attr.ib(type=int, default=0)
     uptime = attr.ib(type=int, default=0)
@@ -184,6 +201,14 @@ def create_struct(dtype, length):
 
 @attr.s
 class TemplateField(object):
+    """A definition of an individual column in a template.
+
+    Parameters:
+        type : FieldType
+        length : int
+            Length of the above type, in bytes.
+    """
+
     type = attr.ib(type=FieldType)
     length = attr.ib(type=int)
 
@@ -203,6 +228,16 @@ class TemplateField(object):
 
 
 class TemplateRecord(object):
+    """A definition of data records received in subsequent export packets.
+
+    Parameters:
+        id : int
+            Unique ID for given template. Only values at or greater than 256
+            are allowed.
+        fields : iterable of TemplateField, optional
+            A collection of fields defined for a template.
+    """
+
     def __init__(self, id, fields=None):
         self.id = id
         self.fields = fields if fields else []
@@ -234,6 +269,13 @@ class TemplateRecord(object):
 
 
 class TemplateFlowSet(object):
+    """A collection of template records grouped together in an export packet.
+
+    Parameters:
+        templates : iterable, optional
+            A collection of template records.
+    """
+
     def __init__(self, templates=None):
         self.id = 0
         self.templates = {template.id: template for template in templates} if templates else {}
@@ -274,6 +316,19 @@ class TemplateFlowSet(object):
 
 
 class DataFlowSet(object):
+    """A collection of data records grouped together in an export packet.
+
+    Parameters:
+        id : int
+            Unique ID for given template. Only values at or greater than 256
+            are allowed.
+        payload : bytes or list
+            Either an encoded byte stream of data records or a list of decoded
+            data records.
+        templates : dict
+            A dictionary of template records, keyed by given TemplateRecord id.
+    """
+
     def __init__(self, id, payload, templates):
         self.template = templates[id]
         self.records = []
@@ -326,6 +381,16 @@ def decode_flowset(source):
 
 
 class ExportPacket(object):
+    """A packet containing IP flows sent from a router to a collector.
+
+    Parameters:
+        flowsets : iterable
+            A collection of template and/or data flowsets.
+        header : Header, optional
+            Packet metadata for given flowsets. If None, then a header with
+            reasonable defaults is created.
+    """
+
     def __init__(self, flowsets, header=None):
         self.header = header if header else Header(count=len(flowsets))
         self.flowsets = flowsets
@@ -367,28 +432,20 @@ class ExportPacket(object):
 
 
 class PacketStream(object):
-    def __init__(self, source):
-        """A read-only representation of serialized packets.
+    """A read-only representation of serialized packets.
 
-        Parameters:
-            source : io.BufferedReader
-                Read-only input for packets.
-        """
+    Parameters:
+        source : io.BufferedReader
+            Read-only input for packets.
+    """
+
+    def __init__(self, source):
         self._source = source
         self._cache = {}
 
     def next(self):
         if peek(self._source) == b'':
             raise StopIteration
-
-        # Packet deserialization is a two-step process.
-        #
-        # A data flowset requires a defined template to complete the
-        # deserialization process, Since template and data flowsets can be
-        # out-of-order within a packet, then we must temporarily wait to
-        # finish deserializing a data flowset and the respective records.
-
-        packet = ExportPacket.decode(self._source)
 
         # Add templates to cache
         packet.update_cache(self._cache)
@@ -409,13 +466,14 @@ class PacketStream(object):
 
 
 class RecordStream(PacketStream):
-    def __init__(self, source):
-        """A read-only representation of serialized data records.
+    """A read-only representation of serialized data records.
 
-        Parameters:
-            source : io.BufferedReader
-                Read-only input for data records.
-        """
+    Parameters:
+        source : io.BufferedReader
+            Read-only input for data records.
+    """
+
+    def __init__(self, source):
         super(RecordStream, self).__init__(source)
         self._queue = []
 
