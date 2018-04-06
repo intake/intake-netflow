@@ -364,15 +364,12 @@ class DataFlowSet(object):
         return raw
 
 
-def peek(source, n=1):
-    loc = source.tell()
-    raw = source.read(n)
-    source.seek(loc)
-    return raw
-
-
 def decode_flowset(source):
-    raw = peek(source, s_flowset.size)
+    # Peek ahead to find flowset ID
+    loc = source.tell()
+    raw = source.read(s_flowset.size)
+    source.seek(loc)
+
     flowset_id = s_flowset.unpack(raw)[0]
     if flowset_id == 0:
         return TemplateFlowSet.decode(source)
