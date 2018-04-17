@@ -163,6 +163,3 @@ texinfo_documents = [
      author, 'intake_netflow', 'One line description of project.',
      'Miscellaneous'),
 ]
-
-
-
