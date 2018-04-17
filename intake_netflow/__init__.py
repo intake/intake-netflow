@@ -4,6 +4,11 @@ from intake.source import base
 
 from .v9 import RecordStream
 
+from ._version import get_versions
+
+__version__ = get_versions()['version']
+del get_versions
+
 
 class Plugin(base.Plugin):
     """Cisco Netflow packets to sequence of Python dicts reader"""

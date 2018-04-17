@@ -1,13 +1,15 @@
 #!/usr/bin/env python
 
 from setuptools import setup, find_packages
+import versioneer
 
 
 requires = open('requirements.txt').read().strip().split('\n')
 
 setup(
     name='intake-netflow',
-    version='0.0.1',
+    version=versioneer.get_version(),
+    cmdclass=versioneer.get_cmdclass(),
     description='Intake Netflow plugin',
     url='https://github.com/ContinuumIO/intake-netflow',
     maintainer='Joseph Crail',
