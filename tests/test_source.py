@@ -1,6 +1,6 @@
 import os
 
-from intake_netflow import NetflowSource
+from intake_netflow.source import NetflowSource
 
 
 basedir = os.path.dirname(__file__)
