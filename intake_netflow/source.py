@@ -1,24 +1,29 @@
 from dask.bytes import open_files
 
 from intake.source import base
-
-from .v9 import RecordStream
+from . import __version__
 
 
 class NetflowSource(base.DataSource):
+    name = 'netflow'
+    version = __version__
+    container = 'python'
+    partition_access = True
+
     def __init__(self, urlpath, metadata=None):
         """Source to load Cisco Netflow packets as sequence of Python dicts.
 
         Parameters:
             urlpath : str
-                Location of the data files; can include protocol and glob characters.
+                Location of the data files; can include protocol and glob 
+                characters.
         """
         self._urlpath = urlpath
-        self._streams = open_files(urlpath, mode='rb')
-
-        super(NetflowSource, self).__init__(container='python', metadata=metadata)
+        super(NetflowSource, self).__init__(metadata=metadata)
 
     def _get_schema(self):
+        self._streams = open_files(self._urlpath, mode='rb')
+        self.npartitions = len(self._streams)
         return base.Schema(datashape=None,
                            dtype=None,
                            shape=None,
@@ -26,11 +31,23 @@ class NetflowSource(base.DataSource):
                            extra_metadata={})
 
     def _get_partition(self, i):
-        with self._streams[i] as f:
-            return list(RecordStream(f))
+        return read_stream(self._streams[i])
+
+    def read(self):
+        return self.to_dask().compute()
+
+    def to_dask(self):
+        import dask.delayed
+        import dask.bag as db
+        dpart = dask.delayed(read_stream)
+        parts = [dpart(stream) for stream in self._streams]
+        return db.from_delayed(parts)
 
     def _close(self):
-        for stream in self._streams:
-            stream.close()
-
         self._streams = None
+
+
+def read_stream(stream):
+    from .v9 import RecordStream
+    with stream as f:
+        return list(RecordStream(f))
