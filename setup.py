@@ -16,6 +16,10 @@ setup(
     maintainer_email='jbcrail@gmail.com',
     license='BSD',
     packages=find_packages(),
+    entry_points={
+        'intake.drivers': [
+            'netflow = intake_netflow.source:NetflowSource',
+        ]},
     package_data={'': ['*.netflow', '*.yml', '*.html']},
     include_package_data=True,
     install_requires=requires,
